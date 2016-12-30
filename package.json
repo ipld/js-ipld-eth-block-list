@@ -11,13 +11,13 @@
     "cids": "^0.3.4",
     "multihashes": "^0.3.0",
     "multihashing-async": "^0.3.0",
-    "rlp": "^2.0.0"
+    "rlp": "^2.0.0",
+    "ipfs-block": "^0.5.3"
   },
   "devDependencies": {
     "aegir": "^9.1.2",
     "chai": "^3.5.0",
-    "ethereumjs-block": "^1.4.0",
-    "ipfs-block": "^0.5.3"
+    "ethereumjs-block": "^1.4.0"
   },
   "scripts": {
     "test": "aegir-test",

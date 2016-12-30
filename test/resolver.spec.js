@@ -3,6 +3,7 @@
 
 const expect = require('chai').expect
 const IpfsBlock = require('ipfs-block')
+const multihash = require('multihashes')
 const RLP = require('rlp')
 const EthBlock = require('ethereumjs-block')
 const EthBlockFromRpc = require('ethereumjs-block/from-rpc')
@@ -63,6 +64,20 @@ describe('IPLD format resolver (local)', () => {
         expect(typeof paths).to.eql('object')
         expect(Array.isArray(paths)).to.eql(true)
         expect(paths.length).to.eql(ethBlock.uncleHeaders.length+1)
+      })
+    })
+  })
+
+  describe('util', () => {
+    let rawOmmers = ethBlock.uncleHeaders.map((ommerHeader) => ommerHeader.raw)
+    it('generates correct cid', () => {
+      dagEthBlockList.util.cid(rawOmmers, (err, cid) => {
+        expect(err).to.not.exist
+        expect(cid.version).to.equal(1)
+        expect(cid.codec).to.equal('eth-block-list')
+        let mhash = multihash.decode(cid.multihash)
+        expect(mhash.name).to.equal('keccak-256')
+        expect(mhash.digest.toString('hex')).to.equal(ethBlock.header.uncleHash.toString('hex'))
       })
     })
   })
