@@ -1,10 +1,12 @@
 'use strict'
 
 const util = require('./util')
+const cidForHash = require('./common').cidForHash
+const EthBlockHead = require('ethereumjs-block/header')
 
 exports = module.exports
 
-exports.multicodec = 'eth-tx'
+exports.multicodec = 'eth-block-list'
 
 /*
  * resolve: receives a path and a block and returns the value on path,
@@ -59,7 +61,7 @@ exports.tree = (block, options, callback) => {
     options = {}
   }
 
-  util.deserialize(block.data, (err, tx) => {
+  util.deserialize(block.data, (err, blockList) => {
     if (err) return callback(err)
 
     const paths = []
@@ -70,58 +72,18 @@ exports.tree = (block, options, callback) => {
 
     // internal data
 
-    paths.push({
-      path: 'nonce',
-      value: tx.nonce
-    })
-    paths.push({
-      path: 'gasPrice',
-      value: tx.gasPrice
-    })
-    paths.push({
-      path: 'gasLimit',
-      value: tx.gasLimit
-    })
-    paths.push({
-      path: 'toAddress',
-      value: tx.to
-    })
-    paths.push({
-      path: 'value',
-      value: tx.value
-    })
-    paths.push({
-      path: 'data',
-      value: tx.data
-    })
-    paths.push({
-      path: 'v',
-      value: tx.v
-    })
-    paths.push({
-      path: 'r',
-      value: tx.r
-    })
-    paths.push({
-      path: 's',
-      value: tx.s
+    blockList.forEach((rawBlock, index) => {
+      paths.push({
+        path: index.toString(),
+        value: new EthBlockHead(rawBlock)
+      })
     })
 
     // helpers
 
     paths.push({
-      path: 'fromAddress',
-      value: tx.from
-    })
-
-    paths.push({
-      path: 'signature',
-      value: [tx.v, tx.r, tx.s]
-    })
-
-    paths.push({
-      path: 'isContractPublish',
-      value: tx.toCreationAddress()
+      path: 'count',
+      value: blockList.length
     })
 
     callback(null, paths)

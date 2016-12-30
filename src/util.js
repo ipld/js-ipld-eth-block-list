@@ -1,34 +1,41 @@
 'use strict'
 
-const Transaction = require('ethereumjs-tx')
+const async = require('async')
+const RLP = require('rlp')
+const multihash = require('multihashing-async')
 const cidForHash = require('./common').cidForHash
 
 exports.deserialize = function (data, callback) {
   let deserialized
   try {
-    deserialized = new Transaction(data)
+    deserialized = RLP.decode(data)
   } catch (err) {
     return callback(err)
   }
   callback(null, deserialized)
 }
 
-exports.serialize = function (tx, callback) {
+exports.serialize = function (blockList, callback) {
   let serialized
   try {
-    serialized = tx.serialize()
+    serialized = RLP.encode(blockList)
   } catch (err) {
     return callback(err)
   }
   callback(null, serialized)
 }
 
-exports.cid = function (tx, callback) {
-  let cid
-  try {
-    cid = cidForHash('eth-tx', tx.hash())
-  } catch (err) {
-    return callback(err)
-  }
-  callback(null, cid)
+exports.cid = function (blockList, callback) {
+  async.waterfall([
+    (cb) => exports.serialize(blockList, cb),
+    (data, cb) => multihash(data, 'keccak-256', cb),
+    (mhash, cb) => {
+      try {
+        let cid = cidForHash('eth-block-list', mhash)
+        cb(null, cid)
+      } catch (err) {
+        return cb(err)
+      }
+    },
+  ], callback)
 }
