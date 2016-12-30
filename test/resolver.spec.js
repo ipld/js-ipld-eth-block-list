@@ -32,45 +32,49 @@ describe('IPLD format resolver (local)', () => {
   })
 
   describe('resolver.resolve', () => {
-    it('uncle #0', () => {
+    it('uncle #0', (done) => {
       resolver.resolve(testIpfsBlock, '0', (err, result) => {
         expect(err).to.not.exist
         expect(result.value.hash().toString('hex')).to.equal('acfa207ce9d5139b85ecfdc197f8d283fc241f95f176f008f44aab35ef1f901f')
         expect(result.remainderPath).to.equal('')
+        done()
       })
     })
 
-    it('uncle #1', () => {
+    it('uncle #1', (done) => {
       resolver.resolve(testIpfsBlock, '1', (err, result) => {
         expect(err).to.not.exist
         expect(result.value.hash().toString('hex')).to.equal('fe426f2eb0adc88f05ea737da1ebb79e03bca546563ad74bda7bffeb37ad4d6a')
         expect(result.remainderPath).to.equal('')
+        done()
       })
     })
 
-    it('uncle count', () => {
+    it('uncle count', (done) => {
       resolver.resolve(testIpfsBlock, 'count', (err, result) => {
         expect(err).to.not.exist
         expect(result.value).to.equal(2)
         expect(result.remainderPath).to.equal('')
+        done()
       })
     })
   })
 
   describe('resolver.tree', () => {
-    it('returns all uncles', () => {
+    it('returns all uncles', (done) => {
       resolver.tree(testIpfsBlock, (err, paths) => {
         expect(err).to.not.exist
         expect(typeof paths).to.eql('object')
         expect(Array.isArray(paths)).to.eql(true)
         expect(paths.length).to.eql(ethBlock.uncleHeaders.length+1)
+        done()
       })
     })
   })
 
   describe('util', () => {
-    let rawOmmers = ethBlock.uncleHeaders.map((ommerHeader) => ommerHeader.raw)
-    it('generates correct cid', () => {
+    it('generates correct cid', (done) => {
+      let rawOmmers = ethBlock.uncleHeaders.map((ommerHeader) => ommerHeader.raw)
       dagEthBlockList.util.cid(rawOmmers, (err, cid) => {
         expect(err).to.not.exist
         expect(cid.version).to.equal(1)
@@ -78,6 +82,7 @@ describe('IPLD format resolver (local)', () => {
         let mhash = multihash.decode(cid.multihash)
         expect(mhash.name).to.equal('keccak-256')
         expect(mhash.digest.toString('hex')).to.equal(ethBlock.header.uncleHash.toString('hex'))
+        done()
       })
     })
   })

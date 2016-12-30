@@ -28,14 +28,15 @@ exports.serialize = function (blockList, callback) {
 exports.cid = function (blockList, callback) {
   async.waterfall([
     (cb) => exports.serialize(blockList, cb),
-    (data, cb) => multihash(data, 'keccak-256', cb),
+    (data, cb) => multihash.digest(data, 'keccak-256', cb),
     (mhash, cb) => {
+      let cid
       try {
-        let cid = cidForHash('eth-block-list', mhash)
-        cb(null, cid)
+        cid = cidForHash('eth-block-list', mhash)
       } catch (err) {
         return cb(err)
       }
+      cb(null, cid)
     },
   ], callback)
 }
