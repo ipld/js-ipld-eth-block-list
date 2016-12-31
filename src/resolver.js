@@ -1,8 +1,11 @@
 'use strict'
 
+const async = require('async')
+const EthBlockHead = require('ethereumjs-block/header')
+const IpldEthBlock = require('ipld-eth-block')
 const util = require('./util')
 const cidForHash = require('./common').cidForHash
-const EthBlockHead = require('ethereumjs-block/header')
+
 
 exports = module.exports
 
@@ -13,36 +16,43 @@ exports.multicodec = 'eth-block-list'
  * throw if not possible. `block` is an IPFS Block instance (contains data + key)
  */
 exports.resolve = (block, path, callback) => {
+  util.deserialize(block.data, (err, ethBlockList) => {
+    if (err) return callback(err)
+    exports.resolveFromObject(ethBlockList, path, callback)
+  })
+}
+
+exports.resolveFromObject = (ethBlockList, path, callback) => {
   let result
-  util.deserialize(block.data, (err, node) => {
+  
+  // root
+  if (!path || path === '/') {
+    result = { value: ethBlockList, remainderPath: '' }
+    return callback(null, result)
+  }
+
+  // check tree results
+  exports.treeFromObject(ethBlockList, {}, (err, paths) => {
     if (err) return callback(err)
 
-    // root
-    if (!path || path === '/') {
-      result = { value: node, remainderPath: '' }
-      return callback(null, result)
+    // find potential matches
+    let matches = paths.filter(child => child.path === path.slice(0,child.path.length))
+    // take longest match
+    let sortedMatches = matches.sort((a,b) => a.path.length < b.path.length)
+    let treeResult = sortedMatches[0]
+
+    if (!treeResult) {
+      let err = new Error('Path not found ("' + path + '").')
+      return callback(err)
     }
 
-    // check tree results
-    let pathParts = path.split('/')
-    let firstPart = pathParts.shift()
-    let remainderPath = pathParts.join('/')
+    let remainderPath = path.slice(treeResult.path.length)
 
-    exports.tree(block, (err, paths) => {
-      if (err) return callback(err)
-
-      let treeResult = paths.find(child => child.path === firstPart)
-      if (!treeResult) {
-        let err = new Error('Path not found ("' + firstPart + '").')
-        return callback(err)
-      }
-
-      result = {
-        value: treeResult.value,
-        remainderPath: remainderPath
-      }
-      return callback(null, result)
-    })
+    result = {
+      value: treeResult.value,
+      remainderPath: remainderPath
+    }
+    return callback(null, result)
   })
 }
 
@@ -61,31 +71,48 @@ exports.tree = (block, options, callback) => {
     options = {}
   }
 
-  util.deserialize(block.data, (err, blockList) => {
+  util.deserialize(block.data, (err, ethBlockList) => {
     if (err) return callback(err)
+    exports.treeFromObject(ethBlockList, options, callback)
+  })
+}
 
-    const paths = []
+exports.treeFromObject = (ethBlockList, options, callback) => {
+  let paths = []
 
-    // external links (none)
+  // external links (none)
 
-    // external links as data (none)
+  // external links as data (none)
 
-    // internal data
+  // helpers
 
-    blockList.forEach((rawBlock, index) => {
-      paths.push({
-        path: index.toString(),
-        value: new EthBlockHead(rawBlock)
-      })
-    })
+  paths.push({
+    path: 'count',
+    value: ethBlockList.length
+  })
 
-    // helpers
+  // internal data
 
+  // add paths for each block
+  async.each(ethBlockList, (rawBlock, next) => {
+    let index = ethBlockList.indexOf(rawBlock)
+    let blockPath = index.toString()
+    let ethBlock = new EthBlockHead(rawBlock)
+    // block root
     paths.push({
-      path: 'count',
-      value: blockList.length
+      path: blockPath,
+      value: ethBlock
     })
-
+    // block children
+    IpldEthBlock.resolver.treeFromObject(ethBlock, {}, (err, subpaths) => {
+      if (err) return next(err)
+      // append blockPath to each subpath
+      subpaths.forEach((path) => path.path = blockPath + '/' + path.path)
+      paths = paths.concat(subpaths)
+      next()
+    })
+  }, (err) => {
+    if (err) return callback(err)
     callback(null, paths)
   })
 }

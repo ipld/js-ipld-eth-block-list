@@ -58,6 +58,15 @@ describe('IPLD format resolver (local)', () => {
         done()
       })
     })
+
+    it('resolve block data off uncle #0', (done) => {
+      resolver.resolve(testIpfsBlock, '0/timestamp', (err, result) => {
+        expect(err).to.not.exist
+        expect(result.value.toString('hex')).to.equal('55ba43df')
+        expect(result.remainderPath).to.equal('')
+        done()
+      })
+    })
   })
 
   describe('resolver.tree', () => {
@@ -66,7 +75,8 @@ describe('IPLD format resolver (local)', () => {
         expect(err).to.not.exist
         expect(typeof paths).to.eql('object')
         expect(Array.isArray(paths)).to.eql(true)
-        expect(paths.length).to.eql(ethBlock.uncleHeaders.length+1)
+        const expectedPaths = ethBlock.uncleHeaders.length * 21 + 1
+        expect(paths.length).to.eql(expectedPaths)
         done()
       })
     })
