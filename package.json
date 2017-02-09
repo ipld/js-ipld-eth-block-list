@@ -9,7 +9,7 @@
   "dependencies": {
     "async": "^2.1.4",
     "cids": "^0.3.5",
-    "ipfs-block": "^0.5.3",
+    "ipfs-block": "^0.5.5",
     "ipld-eth-block": "^2.2.1",
     "multihashes": "^0.3.0",
     "multihashing-async": "^0.3.0",
