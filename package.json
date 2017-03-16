@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "async": "^2.1.4",
-    "cids": "^0.3.5",
+    "cids": "^0.4.2",
     "ipfs-block": "^0.5.3",
     "ipld-eth-block": "^2.2.1",
     "multihashes": "^0.3.0",
